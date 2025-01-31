@@ -1,103 +1,97 @@
-import numpy as np
+from models.qLSTM import qlstm, Config
+from utils.trainer import train_model, plot_accuracies
+import pennylane as qml
+from pennylane import numpy as np
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
+import torch.optim as optim
+from torch.utils.data import DataLoader, random_split, WeightedRandomSampler
 from use_case.dataset import FIDataset
+from tqdm.auto import tqdm
+import copy
+import logging
+from typing import Tuple, Dict, List
+import matplotlib.pyplot as plt
+from use_case.metrics import compute_score
 
-# Ensure reproducibility.
-torch.manual_seed(42)
-np.random.seed(42)
 
-DEBUG_PRINT = False
+learning_rate = 0.001
+epochs = 100
 
-# Dataset and DataLoader
-class BINCTABL(nn.Module):
-    def __init__(self, input_dim, num_classes, horizon_count):
-        super(BINCTABL, self).__init__()
+def main():
+    """Main execution function."""
+    # Initialize configuration
+    config = Config()
 
-        # Feature Normalization
-        self.feature_norm = nn.LayerNorm(input_dim)
+    # Load and split dataset
+    train_dataset = FIDataset('test', 'data')
+    val_dataset = FIDataset('val', 'data')
+    test_dataset = FIDataset('test', 'data')
+    all_labels =[]
+    for _, label in train_dataset:
+        all_labels.extend(label.flatten().tolist())
+    label_counts = torch.bincount(torch.tensor(all_labels))
 
-        # Temporal Normalization
-        self.temporal_norm = nn.LayerNorm(horizon_count)
+    weights = 1./label_counts.float()
+    weights = weights/weights.sum()
+    sample_weights = []
+    for _, label in train_dataset:
+        sample_weights.append(weights[label].mean())
 
-        # Bilinear Layer
-        self.bilinear_layer = nn.Bilinear(input_dim, horizon_count, 128)
+    sampler = WeightedRandomSampler(weights=sample_weights,
+                                    num_samples=len(sample_weights),
+                                    replacement = True
+                                    )
 
-        # Fully Connected Layers
-        self.fc1 = nn.Linear(128, 64)
-        self.fc2 = nn.Linear(64, num_classes)
 
-        # Activation Functions
-        self.relu = nn.ReLU()
-        self.softmax = nn.Softmax(dim=-1)
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size,
+                              sampler = sampler)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size,
+                            shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=config.batch_size,
+                             shuffle=False)
 
-    def forward(self, x):
-        # Input x: [batch_size, horizon_count, input_dim]
+    # Initialize model
+    sample = next(iter(train_loader))
+    features, _ = sample
+    input_dim = features.shape[2]
 
-        # Feature normalization
-        x = self.feature_norm(x)
+    model = qlstm(
+        input_dim=input_dim,
+        lstm_hidden_size=config.lstm_hidden_size,
+        n_qubits=config.n_qubits,
+        blocks=config.blocks,
+        layers=config.layers
+    )
 
-        # Temporal normalization
-        x = x.permute(0, 2, 1)  # [batch_size, input_dim, horizon_count]
-        x = self.temporal_norm(x)
+    # Train model
+    trained_model, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 
-        # Bilinear transformation
-        horizon_count = x.size(-1)
-        x = x.permute(0, 2, 1)  # Back to [batch_size, horizon_count, input_dim]
-        x = torch.mean(x, dim=1)  # Averaging over the horizon_count dimension
+    # Save model
+    torch.save(trained_model.state_dict(), fr'params/best_model2_{config.n_qubits}.pth')
 
-        # Create second input for bilinear layer with matching batch size
-        batch_size = x.size(0)
-        bilinear_input2 = torch.arange(horizon_count).float().unsqueeze(0).repeat(batch_size, 1).to(x.device)
-        x = self.bilinear_layer(x, bilinear_input2)
+    logger.info("Training completed successfully")
+    plot_accuracies(tav, vav)
 
-        # Fully connected layers
-        x = self.relu(self.fc1(x))
-        x = self.softmax(self.fc2(x))
-        return x
+    trained_model.eval()
+    all_predictions = []
+    all_targets = []
+    for inputs, targets in tqdm(test_loader):
+        predictions = model(inputs)
+        all_predictions.append(predictions.detach().numpy())
+        all_targets.append(targets.numpy())
 
-# Configuration
-input_dim = 40  # Features
-num_classes = 3  # Upward, Stationary, Downward
-horizon_count = 10  # Number of horizons
+    all_predictions = np.concatenate(all_predictions, axis=0)
+    all_targets = np.concatenate(all_targets, axis=0)
 
-# Dataset preparation
-dataset_type = "train"
-dataset = FIDataset(dataset_type, 'data')
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    matches = np.sum(all_predictions == all_targets)
+    total_elements = all_predictions.size
+    percentage_match = (matches / total_elements) * 100
 
-# Model, Loss, Optimizer
-model = BINCTABL(input_dim=input_dim, num_classes=num_classes, horizon_count=horizon_count)
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    print(f"Percentage of matching elements: {percentage_match:.2f}%, ratio = {matches}/{total_elements}")
+    print(all_predictions, all_targets)
+    print(compute_score(all_targets, all_predictions))
 
-# Training Loop
-def train_model(model, dataloader, criterion, optimizer, num_epochs=10):
-    for epoch in range(num_epochs):
-        model.train()
-        running_loss = 0.0
-        for inputs, labels in dataloader:
-            inputs, labels = inputs.float(), labels.long()
 
-            # Zero gradients
-            optimizer.zero_grad()
-
-            # Forward pass
-            outputs = model(inputs)
-
-            # Compute loss
-            loss = criterion(outputs, labels)
-
-            # Backward pass
-            loss.backward()
-
-            # Update parameters
-            optimizer.step()
-
-            running_loss += loss.item()
-
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {running_loss / len(dataloader):.4f}")
-
-# Train the model
-train_model(model, dataloader, criterion, optimizer)
+if __name__ == "__main__":
+    main()
