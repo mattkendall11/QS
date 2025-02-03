@@ -42,7 +42,9 @@ def train_model(model: nn.Module, train_loader: DataLoader,
     # early_stopping = EarlyStopping(patience=config.early_stopping_patience)
 
     best_model = None
+    best_performer = None
     best_val_loss = float('inf')
+    best_train_loss = float('inf')
     t_accuracy_vals = []
     v_accuracy_vals = []
     for epoch in range(epochs):
@@ -101,13 +103,15 @@ def train_model(model: nn.Module, train_loader: DataLoader,
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_model = copy.deepcopy(model)
-
+        if train_loss < best_train_loss:
+            best_train_loss = train_loss
+            best_performer = copy.deepcopy(model)
         # Early stopping check
         if early_stopping(val_loss):
             logger.info("Early stopping triggered")
             break
 
-    return best_model, t_accuracy_vals, v_accuracy_vals
+    return best_model, best_performer, t_accuracy_vals, v_accuracy_vals
 
 
 def plot_accuracies(tav, vav):

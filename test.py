@@ -69,11 +69,11 @@ def main():
     )
 
     # Train model
-    trained_model, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
+    trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 
     # Save model
     torch.save(trained_model.state_dict(), fr'params/best_model2_{config.n_qubits}.pth')
-
+    torch.save(best_performer.state_dict(), fr'params/best_performer.pth')
     logger.info("Training completed successfully")
     plot_accuracies(tav, vav)
 

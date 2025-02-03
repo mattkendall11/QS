@@ -87,7 +87,7 @@ class qlstm(nn.Module):
 
     def forward(self, x: torch.Tensor, return_logits: bool = False) -> torch.Tensor:
         # LSTM processing
-        print(fr'input shape: {x.shape}')
+        #print(fr'input shape: {x.shape}')
         x, _ = self.lstm(x)
         #print(fr'after lstm: {x.shape}')
         x = x[:, -1, :]  # Take the last timestep
@@ -104,7 +104,7 @@ class qlstm(nn.Module):
         #print(fr'after quantum layer: {x.shape}')
         # Output processing
         logits = self.fc5(x)
-        print(fr'after linear layer: {x.shape}')
+        #print(fr'after linear layer: {x.shape}')
         logits = logits.view(-1, 5, 3)
 
         if return_logits:
