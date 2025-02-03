@@ -1,5 +1,6 @@
 from models.qLSTM import qlstm, Config
 from utils.trainer import train_model, plot_accuracies
+from utils.data_preprocessing import Big_data
 import pennylane as qml
 from pennylane import numpy as np
 import torch
@@ -27,6 +28,9 @@ def main():
     train_dataset = FIDataset('test', 'data')
     val_dataset = FIDataset('val', 'data')
     test_dataset = FIDataset('test', 'data')
+    # train_dataset = Big_data('data/BenchmarkDatasets', dataset_type='train')
+    # val_dataset = FIDataset('val', 'data')
+    # test_dataset = FIDataset('test', 'data')
     all_labels =[]
     for _, label in train_dataset:
         all_labels.extend(label.flatten().tolist())
@@ -43,7 +47,7 @@ def main():
                                     replacement = True
                                     )
 
-
+    # turn sampler on ususally
     train_loader = DataLoader(train_dataset, batch_size=config.batch_size,
                               sampler = sampler)
     val_loader = DataLoader(val_dataset, batch_size=config.batch_size,
@@ -53,7 +57,7 @@ def main():
 
     # Initialize model
     sample = next(iter(train_loader))
-    features, _ = sample
+    features, label = sample
     input_dim = features.shape[2]
 
     model = qlstm(
@@ -95,3 +99,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

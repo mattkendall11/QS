@@ -87,20 +87,24 @@ class qlstm(nn.Module):
 
     def forward(self, x: torch.Tensor, return_logits: bool = False) -> torch.Tensor:
         # LSTM processing
+        print(fr'input shape: {x.shape}')
         x, _ = self.lstm(x)
+        #print(fr'after lstm: {x.shape}')
         x = x[:, -1, :]  # Take the last timestep
-
+        #print(fr'after taking last timestep: {x.shape}')
         # Classical processing with batch normalization
         x = self.bn1(nn.functional.relu(self.fc1(x)))
+        #print(fr'after batch normalisation: {x.shape}')
         # x = self.bn2(nn.functional.relu(self.fc2(x)))
         # x = self.bn3(nn.functional.relu(self.fc3(x)))
         # x = nn.functional.relu(self.fc4(x))
 
         # Quantum processing
         x = self.quantum_layer(x)
-
+        #print(fr'after quantum layer: {x.shape}')
         # Output processing
         logits = self.fc5(x)
+        print(fr'after linear layer: {x.shape}')
         logits = logits.view(-1, 5, 3)
 
         if return_logits:
@@ -108,3 +112,20 @@ class qlstm(nn.Module):
         else:
             predictions = torch.argmax(logits, dim=-1)
             return predictions
+
+def test_one_pass():
+
+    input_dim = 40
+    config = Config()
+    model = qlstm(
+            input_dim=input_dim,
+            lstm_hidden_size=config.lstm_hidden_size,
+            n_qubits=config.n_qubits,
+            blocks=config.blocks,
+            layers=config.layers
+        )
+
+    dummy_data = torch.rand(32,10,40)
+
+    outut = model(dummy_data)
+    return outut
