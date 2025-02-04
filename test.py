@@ -60,6 +60,7 @@ def main():
     features, label = sample
     input_dim = features.shape[2]
     model = qBinc(input_dim = input_dim)
+
     # model = qlstm(
     #     input_dim=input_dim,
     #     lstm_hidden_size=config.lstm_hidden_size,
@@ -67,6 +68,7 @@ def main():
     #     blocks=config.blocks,
     #     layers=config.layers
     # )
+
     # model = qcnn(
     #         input_dim=input_dim,
     #     cnn_channels = config.cnn_channels,
@@ -74,6 +76,7 @@ def main():
     # blocks = config.blocks,
     #     layers = config.layers
     #     )
+    
     # Train model
     trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 
