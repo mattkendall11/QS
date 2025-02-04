@@ -17,17 +17,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class Config:
+class Config2:
     """Configuration class for hyperparameters and model settings."""
 
     def __init__(self):
         # Model hyperparameters
         self.n_qubits = 8
         self.batch_size = 32
-        self.lstm_hidden_size = 256
+        self.cnn_channels = 64  # Replace LSTM hidden size with CNN channels
         self.blocks = 2
         self.layers = 2
-
 
 
 def create_qnode(n_qubits: int, blocks: int, layers: int) -> Tuple[qml.QNode, Dict]:
@@ -53,24 +52,24 @@ def create_qnode(n_qubits: int, blocks: int, layers: int) -> Tuple[qml.QNode, Di
     return qnode, weight_shapes
 
 
-class qlstm(nn.Module):
-    """Hybrid quantum-classical model combining LSTM and quantum circuit."""
+class qcnn(nn.Module):
+    """Hybrid quantum-classical model combining 1D CNN and quantum circuit."""
 
-    def __init__(self, input_dim: int, lstm_hidden_size: int, n_qubits: int,
+    def __init__(self, input_dim: int, cnn_channels: int, n_qubits: int,
                  blocks: int, layers: int):
         super().__init__()
 
-        # Bidirectional LSTM
-        self.lstm = nn.LSTM(
-            input_size=input_dim,
-            hidden_size=lstm_hidden_size,
-            batch_first=True,
-            bidirectional=True
+        # 1D Convolutional layers
+        self.conv1 = nn.Conv1d(
+            in_channels=input_dim,
+            out_channels=cnn_channels,
+            kernel_size=3,
+            padding=1
         )
-        lstm_output_size = lstm_hidden_size * 2  # Account for bidirectional
+        self.pool = nn.AdaptiveAvgPool1d(1)  # Global average pooling
 
         # Classical layers with batch normalization
-        self.fc1 = nn.Linear(lstm_output_size, 256)
+        self.fc1 = nn.Linear(cnn_channels, 256)
         self.bn1 = nn.BatchNorm1d(256)
 
         # Quantum layer
@@ -81,11 +80,12 @@ class qlstm(nn.Module):
         self.fc5 = nn.Linear(n_qubits, 15)  # 15 = 5 horizons x 3 classes
 
     def forward(self, x: torch.Tensor, return_logits: bool = False) -> torch.Tensor:
-        # LSTM processing
+        # CNN processing
+        x = x.transpose(1, 2)
+        # Change from (batch, seq_len, features) to (batch, features, seq_len)
+        x = self.conv1(x)
 
-        x, _ = self.lstm(x)
-
-        x = x[:, -1, :]  # Take the last timestep
+        x = self.pool(x).squeeze(-1)  # Global average pooling
 
         x = self.bn1(nn.functional.relu(self.fc1(x)))
 
@@ -105,16 +105,17 @@ class qlstm(nn.Module):
 def test_one_pass():
 
     input_dim = 40
-    config = Config()
-    model = qlstm(
+    config = Config2()
+    model = qcnn(
             input_dim=input_dim,
-            lstm_hidden_size=config.lstm_hidden_size,
-            n_qubits=config.n_qubits,
-            blocks=config.blocks,
-            layers=config.layers
+        cnn_channels = config.cnn_channels,
+        n_qubits = config.n_qubits,
+    blocks = config.blocks,
+        layers = config.layers
         )
 
     dummy_data = torch.rand(32,10,40)
 
     outut = model(dummy_data)
     return outut
+test_one_pass()

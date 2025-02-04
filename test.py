@@ -1,4 +1,6 @@
 from models.qLSTM import qlstm, Config
+from models.qCNN import qcnn, Config2
+from models.qbinc import qBinc
 from utils.trainer import train_model, plot_accuracies
 from utils.data_preprocessing import Big_data
 import pennylane as qml
@@ -22,15 +24,13 @@ epochs = 100
 def main():
     """Main execution function."""
     # Initialize configuration
-    config = Config()
+    config = Config2()
 
     # Load and split dataset
-    train_dataset = FIDataset('val', 'data')
-    val_dataset = FIDataset('train', 'data')
+    train_dataset = FIDataset('test', 'data')
+    val_dataset = FIDataset('val', 'data')
     test_dataset = FIDataset('test', 'data')
-    # train_dataset = Big_data('data/BenchmarkDatasets', dataset_type='train')
-    # val_dataset = FIDataset('val', 'data')
-    # test_dataset = FIDataset('test', 'data')
+
     all_labels =[]
     for _, label in train_dataset:
         all_labels.extend(label.flatten().tolist())
@@ -59,21 +59,27 @@ def main():
     sample = next(iter(train_loader))
     features, label = sample
     input_dim = features.shape[2]
-
-    model = qlstm(
-        input_dim=input_dim,
-        lstm_hidden_size=config.lstm_hidden_size,
-        n_qubits=config.n_qubits,
-        blocks=config.blocks,
-        layers=config.layers
-    )
-
+    model = qBinc(input_dim = input_dim)
+    # model = qlstm(
+    #     input_dim=input_dim,
+    #     lstm_hidden_size=config.lstm_hidden_size,
+    #     n_qubits=config.n_qubits,
+    #     blocks=config.blocks,
+    #     layers=config.layers
+    # )
+    # model = qcnn(
+    #         input_dim=input_dim,
+    #     cnn_channels = config.cnn_channels,
+    #     n_qubits = config.n_qubits,
+    # blocks = config.blocks,
+    #     layers = config.layers
+    #     )
     # Train model
     trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 
     # Save model
-    torch.save(trained_model.state_dict(), fr'params/best_model_{config.n_qubits}.pth')
-    torch.save(best_performer.state_dict(), fr'params/best_performer.pth')
+    torch.save(trained_model.state_dict(), fr'params/best_model_qcnn.pth')
+    torch.save(best_performer.state_dict(), fr'params/best_performer_qcnn.pth')
     print("Training completed successfully")
     plot_accuracies(tav, vav)
 
