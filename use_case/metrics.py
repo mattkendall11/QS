@@ -55,10 +55,13 @@ def compute_score(truth, prediction) -> float:
         compute_metrics(truth[:, h], prediction[:, h])[cst.Metrics.F1.value]
         for h in range(5)
     ]
+    scores = 100*np.array(scores)
+    print(fr'scores{scores}')
     # Calculate percentage differences between scores and the benchmark
     percentage_diffs = [
         100 * (scores[h] - benchmark[h]) / benchmark[h] for h in range(5)
     ]
+    print(percentage_diffs)
     # Compute the average percentage difference
     avg_percentage_diff = np.mean(percentage_diffs)
     return avg_percentage_diff

@@ -10,6 +10,8 @@ import logging
 from typing import Tuple, Dict, List
 import matplotlib.pyplot as plt
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class EarlyStopping:
     """Early stopping implementation to prevent overfitting."""
@@ -107,9 +109,9 @@ def train_model(model: nn.Module, train_loader: DataLoader,
             best_train_loss = train_loss
             best_performer = copy.deepcopy(model)
         # Early stopping check
-        if early_stopping(val_loss):
-            logger.info("Early stopping triggered")
-            break
+        # if early_stopping(val_loss):
+        #     logger.info("Early stopping triggered")
+        #     break
 
     return best_model, best_performer, t_accuracy_vals, v_accuracy_vals
 
