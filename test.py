@@ -25,8 +25,8 @@ def main():
     config = Config()
 
     # Load and split dataset
-    train_dataset = FIDataset('train', 'data')
-    val_dataset = FIDataset('val', 'data')
+    train_dataset = FIDataset('val', 'data')
+    val_dataset = FIDataset('train', 'data')
     test_dataset = FIDataset('test', 'data')
     # train_dataset = Big_data('data/BenchmarkDatasets', dataset_type='train')
     # val_dataset = FIDataset('val', 'data')
