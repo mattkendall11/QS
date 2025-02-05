@@ -11,11 +11,17 @@ import logging
 from typing import Tuple, Dict, List
 import matplotlib.pyplot as plt
 from use_case.metrics import compute_score
+from qiskit_ibm_runtime import QiskitRuntimeService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+QiskitRuntimeService.save_account(channel="ibm_quantum",
+                                  token="33e57983eeba524ab15fb723c217e66e8dc3e7c8cbcf348527036e97f5225c3c5efb683e671d6cd582fe177d1ac9085bdd865c87d848f39902b23cd8e7be1328",
+                                  overwrite=True)
+service = QiskitRuntimeService(channel="ibm_quantum")
+backend = service.least_busy(operational=True, simulator=False, min_num_qubits=8)
 
 class Config:
     """Configuration class for hyperparameters and model settings."""
@@ -31,9 +37,9 @@ class Config:
 
 
 def create_qnode(n_qubits: int, blocks: int, layers: int) -> Tuple[qml.QNode, Dict]:
-    dev = qml.device("default.qubit", wires=n_qubits)
+    dev = qml.device("qiskit.remote", wires=n_qubits, backend = backend)
 
-    @qml.qnode(dev, interface="torch", diff_method="backprop")
+    @qml.qnode(dev, interface="torch", diff_method="parameter-shift")
     def qnode(inputs, weights):
         # Amplitude embedding for better quantum state preparation
         qml.AmplitudeEmbedding(features=inputs, wires=range(n_qubits), normalize=True, pad_with=True)
@@ -94,3 +100,5 @@ def test_one_pass():
     outut = model(dummy_data)
 
     return outut
+output = test_one_pass()
+print(output)

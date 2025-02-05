@@ -1,6 +1,7 @@
 from models.qLSTM import qlstm, Config
 from models.qCNN import qcnn, Config2
 from models.qbinc import qBinc
+from models.qnn import qnn
 from utils.trainer import train_model, plot_accuracies
 from utils.data_preprocessing import Big_data
 import pennylane as qml
@@ -59,8 +60,8 @@ def main():
     sample = next(iter(train_loader))
     features, label = sample
     input_dim = features.shape[2]
-    model = qBinc(input_dim = input_dim)
-
+    # model = qBinc(input_dim = input_dim)
+    model = qnn()
     # model = qlstm(
     #     input_dim=input_dim,
     #     lstm_hidden_size=config.lstm_hidden_size,
@@ -76,7 +77,7 @@ def main():
     # blocks = config.blocks,
     #     layers = config.layers
     #     )
-    
+
     # Train model
     trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 

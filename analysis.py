@@ -1,7 +1,7 @@
 from models.qLSTM import qlstm, Config
 import torch
 from use_case.dataset import FIDataset
-from use_case.metrics import compute_score
+from use_case.metrics import compute_score, compute_metrics
 from torch.utils.data import DataLoader
 import numpy as np
 from tqdm.auto import tqdm
@@ -43,5 +43,6 @@ all_predictions = np.concatenate(all_predictions, axis=0)
 all_targets = np.concatenate(all_targets, axis=0)
 
 # Compute the overall score
-score = compute_score(all_predictions, all_targets)
-print("Overall Score:", score)
+score = compute_score(all_targets, all_predictions)
+
+
