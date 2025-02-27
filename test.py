@@ -31,7 +31,6 @@ def main():
     train_dataset = FIDataset('test', 'data')
     val_dataset = FIDataset('val', 'data')
     test_dataset = FIDataset('test', 'data')
-
     all_labels =[]
     for _, label in train_dataset:
         all_labels.extend(label.flatten().tolist())
@@ -70,13 +69,7 @@ def main():
         layers=config.layers
     )
 
-    # model = qcnn(
-    #         input_dim=input_dim,
-    #     cnn_channels = config.cnn_channels,
-    #     n_qubits = config.n_qubits,
-    # blocks = config.blocks,
-    #     layers = config.layers
-    #     )
+
 
     # Train model
     trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)

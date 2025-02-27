@@ -32,15 +32,15 @@ class Big_data(data.Dataset):
         self.horizon = horizon
         self.observation_length = observation_length
         self.num_classes = n_trends
-
+        self.horizons = [1,2,3,5,10]
         # KEY call, generates the dataset
         self.data, self.samples_X, self.samples_y = None, None, None
         self.__prepare_dataset()
 
-        _, occs = self.__class_balancing(self.samples_y)
-        # LOSS_WEIGHTS_DICT = {m: 1e6 for m in cst.Models}
-        LOSS_WEIGHT = 1e6
-        self.loss_weights = torch.Tensor(LOSS_WEIGHT / occs)
+        # _, occs = self.__class_balancing(self.samples_y)
+        # # LOSS_WEIGHTS_DICT = {m: 1e6 for m in cst.Models}
+        # LOSS_WEIGHT = 1e6
+        # self.loss_weights = torch.Tensor(LOSS_WEIGHT / occs)
 
         self.samples_X = torch.from_numpy(self.samples_X).type(torch.FloatTensor)  # torch.Size([203800, 40])
         self.samples_y = torch.from_numpy(self.samples_y).type(torch.LongTensor)   # torch.Size([203800])
@@ -117,8 +117,14 @@ class Big_data(data.Dataset):
         """ gets the labels """
         # the last five elements in self.data contain the labels
         # they are based on the possible horizon values [1, 2, 3, 5, 10]
-        self.samples_y = self.data[cst.HORIZONS_MAPPINGS_FI[self.horizon], :]
-        self.samples_y -= 1
+        # self.samples_y = self.data[cst.HORIZONS_MAPPINGS_FI[self.horizon], :]
+        # self.samples_y -= 1
+        samples_y = [
+            self.data[cst.HORIZONS_MAPPINGS_FI[horizon], :] for horizon in self.horizons
+        ]
+        samples_y = np.array(samples_y).transpose()
+        samples_y = samples_y - 1
+        self.samples_y = samples_y
 
     def __prepare_dataset(self):
         """ Crucial call! """
@@ -129,9 +135,9 @@ class Big_data(data.Dataset):
         self.__prepare_y()
 
         print("Dataset type:", self.dataset_type, " - normalization:", self.normalization_type)
-        occs, occs_vec = self.__class_balancing(self.samples_y)
-
-        perc = ["{}%".format(round(i, 2)) for i in (occs_vec / np.sum(occs_vec)) * 100]
-        print("Balancing", occs, "=>", perc)
-        print()
+        # occs, occs_vec = self.__class_balancing(self.samples_y)
+        #
+        # perc = ["{}%".format(round(i, 2)) for i in (occs_vec / np.sum(occs_vec)) * 100]
+        # print("Balancing", occs, "=>", perc)
+        # print()
 
