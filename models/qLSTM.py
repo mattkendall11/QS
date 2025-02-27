@@ -116,5 +116,5 @@ def test_one_pass():
 
     dummy_data = torch.rand(32,10,40)
 
-    outut = model(dummy_data)
-    return outut
+    output = model(dummy_data)
+    return output

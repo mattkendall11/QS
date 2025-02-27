@@ -135,4 +135,3 @@ class Big_data(data.Dataset):
         print("Balancing", occs, "=>", perc)
         print()
 
-#data = Big_data('../data/BenchmarkDatasets', dataset_type='train', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)

@@ -1,7 +1,7 @@
 from models.qLSTM import qlstm, Config
 from models.qCNN import qcnn, Config2
 from models.qbinc import qBinc
-from models.qnn import qnn
+# from models.qnn import qnn
 from utils.trainer import train_model, plot_accuracies
 from utils.data_preprocessing import Big_data
 import pennylane as qml
@@ -20,12 +20,12 @@ from use_case.metrics import compute_score
 
 
 learning_rate = 0.001
-epochs = 100
+epochs = 400
 
 def main():
     """Main execution function."""
     # Initialize configuration
-    config = Config2()
+    config = Config()
 
     # Load and split dataset
     train_dataset = FIDataset('test', 'data')
@@ -61,14 +61,14 @@ def main():
     features, label = sample
     input_dim = features.shape[2]
     # model = qBinc(input_dim = input_dim)
-    model = qnn()
-    # model = qlstm(
-    #     input_dim=input_dim,
-    #     lstm_hidden_size=config.lstm_hidden_size,
-    #     n_qubits=config.n_qubits,
-    #     blocks=config.blocks,
-    #     layers=config.layers
-    # )
+    # model = qnn()
+    model = qlstm(
+        input_dim=input_dim,
+        lstm_hidden_size=config.lstm_hidden_size,
+        n_qubits=config.n_qubits,
+        blocks=config.blocks,
+        layers=config.layers
+    )
 
     # model = qcnn(
     #         input_dim=input_dim,
@@ -82,8 +82,8 @@ def main():
     trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 
     # Save model
-    torch.save(trained_model.state_dict(), fr'params/best_model_qcnn.pth')
-    torch.save(best_performer.state_dict(), fr'params/best_performer_qcnn.pth')
+    torch.save(trained_model.state_dict(), fr'params/best_model_qlstm.pth')
+    torch.save(best_performer.state_dict(), fr'params/best_performer_qlstm.pth')
     print("Training completed successfully")
     plot_accuracies(tav, vav)
 

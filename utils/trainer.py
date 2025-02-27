@@ -37,11 +37,11 @@ class EarlyStopping:
 
 def train_model(model: nn.Module, train_loader: DataLoader,
                 val_loader: DataLoader, epochs, learning_rate) -> nn.Module:
-    """Train the hybrid model with validation."""
+    """Trains the model with cross-entropy loss"""
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    # early_stopping = EarlyStopping(patience=config.early_stopping_patience)
+    early_stopping = EarlyStopping()
 
     best_model = None
     best_performer = None
@@ -108,10 +108,10 @@ def train_model(model: nn.Module, train_loader: DataLoader,
         if train_loss < best_train_loss:
             best_train_loss = train_loss
             best_performer = copy.deepcopy(model)
-        # Early stopping check
-        # if early_stopping(val_loss):
-        #     logger.info("Early stopping triggered")
-        #     break
+        #Early stopping check
+        if early_stopping(val_loss):
+            logger.info("Early stopping triggered")
+            break
 
     return best_model, best_performer, t_accuracy_vals, v_accuracy_vals
 

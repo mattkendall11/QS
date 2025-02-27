@@ -8,11 +8,11 @@ from tqdm.auto import tqdm
 config = Config()
 
 
-test_dataset = FIDataset('test', 'data')
+test_dataset = FIDataset('train', 'data')
 
 
 test_loader = DataLoader(test_dataset, batch_size=config.batch_size,
-                         shuffle=False)
+                         shuffle=False, drop_last=False)
 
 # Initialize model
 sample = next(iter(test_loader))
@@ -26,8 +26,9 @@ model = qlstm(
     blocks=config.blocks,
     layers=config.layers
 )
-model.load_state_dict(torch.load('params/best_model_8.pth'))
+model.load_state_dict(torch.load('params/best_performer_qlstm.pth'))
 model.eval()
+
 
 all_predictions = []
 all_targets = []
@@ -44,5 +45,5 @@ all_targets = np.concatenate(all_targets, axis=0)
 
 # Compute the overall score
 score = compute_score(all_targets, all_predictions)
-
+print(score)
 
