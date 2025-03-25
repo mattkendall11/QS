@@ -9,26 +9,19 @@ from tqdm.auto import tqdm
 import copy
 import logging
 from typing import Tuple, Dict, List
-import matplotlib.pyplot as plt
-from use_case.metrics import compute_score
-from qiskit_ibm_runtime import QiskitRuntimeService
+from sklearn.decomposition import PCA
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-QiskitRuntimeService.save_account(channel="ibm_quantum",
-                                  token="33e57983eeba524ab15fb723c217e66e8dc3e7c8cbcf348527036e97f5225c3c5efb683e671d6cd582fe177d1ac9085bdd865c87d848f39902b23cd8e7be1328",
-                                  overwrite=True)
-service = QiskitRuntimeService(channel="ibm_quantum")
-backend = service.least_busy(operational=True, simulator=False, min_num_qubits=8)
 
 class Config:
     """Configuration class for hyperparameters and model settings."""
 
     def __init__(self):
         # Model hyperparameters
-        self.n_qubits = 8
+        self.n_qubits = 6
         self.batch_size = 32
         self.lstm_hidden_size = 256
         self.blocks = 2
@@ -37,9 +30,9 @@ class Config:
 
 
 def create_qnode(n_qubits: int, blocks: int, layers: int) -> Tuple[qml.QNode, Dict]:
-    dev = qml.device("qiskit.remote", wires=n_qubits, backend = backend)
+    dev = qml.device("default.qubit", wires=n_qubits)
 
-    @qml.qnode(dev, interface="torch", diff_method="parameter-shift")
+    @qml.qnode(dev, interface="torch", diff_method="backprop")
     def qnode(inputs, weights):
         # Amplitude embedding for better quantum state preparation
         qml.AmplitudeEmbedding(features=inputs, wires=range(n_qubits), normalize=True, pad_with=True)
@@ -59,7 +52,7 @@ def create_qnode(n_qubits: int, blocks: int, layers: int) -> Tuple[qml.QNode, Di
     return qnode, weight_shapes
 
 
-class qnn(nn.Module):
+class qnn_fc(nn.Module):
     """Hybrid quantum-classical model combining LSTM and quantum circuit."""
 
     def __init__(self):
@@ -90,10 +83,47 @@ class qnn(nn.Module):
             return predictions
 
 
+class qnn_pca(nn.Module):
+    """Hybrid quantum-classical model combining LSTM and quantum circuit."""
+
+    def __init__(self):
+        super().__init__()
+        n_qubits = 5
+        blocks = 2
+        layers = 2
+        qnode, weight_shapes = create_qnode(n_qubits, blocks, layers)
+        self.quantum_layer = qml.qnn.TorchLayer(qnode, weight_shapes)
+
+        # Output layer
+        self.fc5 = nn.Linear(n_qubits, 15)  # 15 = 5 horizons x 3 classes
+
+    def forward(self, x: torch.Tensor, return_logits: bool = False) -> torch.Tensor:
+        if isinstance(x,np.ndarray):
+            x = torch.from_numpy(x)
+        x = x.reshape(x.shape[0], -1)
+
+        pca = PCA(n_components=32)
+        x = pca.fit_transform(x)
+
+        if isinstance(x,np.ndarray):
+            x = torch.from_numpy(x)
+        x = self.quantum_layer(x)
+
+        x = x.float()
+        logits = self.fc5(x)
+
+        logits = logits.view(-1, 5, 3)
+
+        if return_logits:
+            return logits
+        else:
+            predictions = torch.argmax(logits, dim=-1)
+            return predictions
+
 def test_one_pass():
 
     input_dim = 40
-    model = qnn()
+    model = qnn_pca()
 
     dummy_data = torch.rand(32,10,40)
     model(dummy_data)
@@ -101,4 +131,4 @@ def test_one_pass():
 
     return outut
 output = test_one_pass()
-print(output)
+print(output.shape)

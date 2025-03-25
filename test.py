@@ -1,7 +1,10 @@
 from models.qLSTM import qlstm, Config
 from models.qCNN import qcnn, Config2
 from models.qbinc import qBinc
-# from models.qnn import qnn
+from models.BINCTABL import BinCTABL
+from models.LSTM import LSTM, Config_lstm
+from models.qnn import qnn_pca
+# from models.qnn import qnn_pca
 from utils.trainer import train_model, plot_accuracies
 from utils.data_preprocessing import Big_data
 import pennylane as qml
@@ -20,17 +23,16 @@ from use_case.metrics import compute_score
 
 
 learning_rate = 0.001
-epochs = 400
+epochs = 250
 
 def main():
     """Main execution function."""
     # Initialize configuration
-    config = Config()
+    config = Config_lstm()
 
-    # Load and split dataset
-    train_dataset = FIDataset('test', 'data')
-    val_dataset = FIDataset('val', 'data')
-    test_dataset = FIDataset('test', 'data')
+    train_dataset = Big_data('data/BenchmarkDatasets', dataset_type='train', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)
+    val_dataset = Big_data('data/BenchmarkDatasets', dataset_type='val', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)
+    test_dataset = Big_data('data/BenchmarkDatasets', dataset_type='test', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)
     all_labels =[]
     for _, label in train_dataset:
         all_labels.extend(label.flatten().tolist())
@@ -59,27 +61,29 @@ def main():
     sample = next(iter(train_loader))
     features, label = sample
     input_dim = features.shape[2]
-    # model = qBinc(input_dim = input_dim)
-    # model = qnn()
-    model = qlstm(
-        input_dim=input_dim,
-        lstm_hidden_size=config.lstm_hidden_size,
-        n_qubits=config.n_qubits,
-        blocks=config.blocks,
-        layers=config.layers
-    )
 
-
+    # model = qlstm(
+    #     input_dim=input_dim,
+    #     lstm_hidden_size=config.lstm_hidden_size,
+    #     n_qubits=config.n_qubits,
+    #     blocks=config.blocks,
+    #     layers=config.layers
+    # )
+    # model = LSTM(input_dim=input_dim,
+    #              lstm_hidden_size=config.lstm_hidden_size,
+    #              num_layers=config.num_layers)
+    model = qnn_pca()
 
     # Train model
     trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 
     # Save model
-    torch.save(trained_model.state_dict(), fr'params/best_model_qlstm.pth')
-    torch.save(best_performer.state_dict(), fr'params/best_performer_qlstm.pth')
+    torch.save(trained_model.state_dict(), fr'params/best_model_qnn_pca.pth')
+    torch.save(best_performer.state_dict(), fr'params/best_performer_qnn_pca.pth')
     print("Training completed successfully")
     plot_accuracies(tav, vav)
-
+    np.save('params/training_accuracies_qnn_pca.npy',tav)
+    np.save('params/val_accuracies_qnn_pca.npy',vav)
     trained_model.eval()
     all_predictions = []
     all_targets = []

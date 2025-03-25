@@ -21,6 +21,7 @@ def plot_circuit(qnode, weights):
     fig, ax = qml.draw_mpl(qnode)(inputs, weights)
 
     # Display the quantum circuit plot
+    plt.savefig('circuit.svg')
     plt.show()
 # n_qubits, blocks, layers = 3, 2, 2
 # qnode, weight_shapes = create_qnode(n_qubits, blocks, layers)

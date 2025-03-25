@@ -13,26 +13,26 @@ import matplotlib.pyplot as plt
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class EarlyStopping:
-    """Early stopping implementation to prevent overfitting."""
-
-    def __init__(self, patience: int = 7):
-        self.patience = patience
-        self.counter = 0
-        self.best_loss = None
-        self.should_stop = False
-
-    def __call__(self, val_loss: float) -> bool:
-        if self.best_loss is None:
-            self.best_loss = val_loss
-        elif val_loss > self.best_loss:
-            self.counter += 1
-            if self.counter >= self.patience:
-                self.should_stop = True
-        else:
-            self.best_loss = val_loss
-            self.counter = 0
-        return self.should_stop
+# class EarlyStopping:
+#     """Early stopping implementation to prevent overfitting."""
+#
+#     def __init__(self, patience: int = 7):
+#         self.patience = patience
+#         self.counter = 0
+#         self.best_loss = None
+#         self.should_stop = False
+#
+#     def __call__(self, val_loss: float) -> bool:
+#         if self.best_loss is None:
+#             self.best_loss = val_loss
+#         elif val_loss > self.best_loss:
+#             self.counter += 1
+#             if self.counter >= self.patience:
+#                 self.should_stop = True
+#         else:
+#             self.best_loss = val_loss
+#             self.counter = 0
+#         return self.should_stop
 
 
 def train_model(model: nn.Module, train_loader: DataLoader,
@@ -41,7 +41,7 @@ def train_model(model: nn.Module, train_loader: DataLoader,
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    early_stopping = EarlyStopping()
+    # early_stopping = EarlyStopping()
 
     best_model = None
     best_performer = None
@@ -109,9 +109,9 @@ def train_model(model: nn.Module, train_loader: DataLoader,
             best_train_loss = train_loss
             best_performer = copy.deepcopy(model)
         #Early stopping check
-        if early_stopping(val_loss):
-            logger.info("Early stopping triggered")
-            break
+        # if early_stopping(val_loss):
+        #     logger.info("Early stopping triggered")
+        #     break
 
     return best_model, best_performer, t_accuracy_vals, v_accuracy_vals
 

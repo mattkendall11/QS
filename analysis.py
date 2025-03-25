@@ -1,4 +1,7 @@
+import matplotlib.pyplot as plt
+
 from models.qLSTM import qlstm, Config
+from models.LSTM import LSTM
 import torch
 from use_case.dataset import FIDataset
 from use_case.metrics import compute_score, compute_metrics
@@ -8,27 +11,33 @@ from tqdm.auto import tqdm
 from utils.data_preprocessing import Big_data
 
 
-data = Big_data('data/BenchmarkDatasets', dataset_type='val', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)
+data = Big_data('data/BenchmarkDatasets', dataset_type='test', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)
 config = Config()
-
-
+'''
+plot training val accuracies
+'''
+yt = np.load('params/training_accuracies.npy')
+xt = range(len(yt))
+yv = np.load('params/val_accuracies.npy')
+plt.plot(xt,yt)
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.show()
 test_loader = DataLoader(data, batch_size=config.batch_size,
                          shuffle=False, drop_last=False)
 
-# Initialize model
-sample = next(iter(test_loader))
-features, label = sample
-input_dim = features.shape[2]
-print(features.shape)
-print(label.shape)
+
 model = qlstm(
-    input_dim=input_dim,
+    input_dim=40,
     lstm_hidden_size=config.lstm_hidden_size,
     n_qubits=config.n_qubits,
     blocks=config.blocks,
     layers=config.layers
 )
-model.load_state_dict(torch.load('params/best_performer_qlstm.pth'))
+# model = LSTM(input_dim=40,
+#              lstm_hidden_size=256,
+#              num_layers=2)
+model.load_state_dict(torch.load('params/best_performer_qlstm2.pth'))
 model.eval()
 
 
