@@ -103,10 +103,14 @@ plt.tight_layout()
 plt.show()
 
 
-
+lstm = [91.34751559, 92.15082538, 93.67199561, 94.12894169, 93.71588446]
+qlstm = [95.18980238, 95.01561763, 95.76465133, 95.86619741, 95.53567548]
+qcnn = []
 benchmark = np.array([88.7, 80.6, 80.1, 88.2, 91.6])
 plt.plot(horizons, accuracies, color = 'b')
 plt.plot(horizons, accuracies, '+', label = 'q-lstm', color = 'b')
+plt.plot(horizons, lstm, color = 'darkblue')
+plt.plot(horizons, lstm, '+', label = 'lstm', color = 'darkblue')
 plt.plot(horizons, benchmark, color = 'r')
 plt.plot(horizons, benchmark,'+', color = 'r', label = 'Benchmark')
 plt.legend()

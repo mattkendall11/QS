@@ -28,7 +28,7 @@ epochs = 250
 def main():
     """Main execution function."""
     # Initialize configuration
-    config = Config_lstm()
+    config = Config()
 
     train_dataset = Big_data('data/BenchmarkDatasets', dataset_type='train', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)
     val_dataset = Big_data('data/BenchmarkDatasets', dataset_type='val', horizon=5, observation_length=10, train_val_split=0.8, n_trends=3)
@@ -62,28 +62,30 @@ def main():
     features, label = sample
     input_dim = features.shape[2]
 
-    # model = qlstm(
-    #     input_dim=input_dim,
-    #     lstm_hidden_size=config.lstm_hidden_size,
-    #     n_qubits=config.n_qubits,
-    #     blocks=config.blocks,
-    #     layers=config.layers
-    # )
+    model = qlstm(
+        input_dim=input_dim,
+        lstm_hidden_size=config.lstm_hidden_size,
+        n_qubits=config.n_qubits,
+        blocks=config.blocks,
+        layers=config.layers
+    )
     # model = LSTM(input_dim=input_dim,
     #              lstm_hidden_size=config.lstm_hidden_size,
     #              num_layers=config.num_layers)
-    model = qnn_pca()
+    # model = qnn_pca()
 
     # Train model
-    trained_model,best_performer, tav, vav = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
+    trained_model,best_performer, tav, vav, tlv,vlv = train_model(model, train_loader, val_loader, learning_rate=learning_rate, epochs=epochs)
 
     # Save model
-    torch.save(trained_model.state_dict(), fr'params/best_model_qnn_pca.pth')
-    torch.save(best_performer.state_dict(), fr'params/best_performer_qnn_pca.pth')
+    torch.save(trained_model.state_dict(), fr'params/best_model_qlstm3.pth')
+    torch.save(best_performer.state_dict(), fr'params/best_performer_qlstm3.pth')
     print("Training completed successfully")
     plot_accuracies(tav, vav)
-    np.save('params/training_accuracies_qnn_pca.npy',tav)
-    np.save('params/val_accuracies_qnn_pca.npy',vav)
+    np.save('params/training_accuracies_qlstm3.npy',tav)
+    np.save('params/val_accuracies_qlstm3.npy',vav)
+    np.save('params/training_loss_qlstm3.npy',tlv)
+    np.save('params/val_loss_qlstm3.npy',vlv)
     trained_model.eval()
     all_predictions = []
     all_targets = []

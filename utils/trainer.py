@@ -49,6 +49,8 @@ def train_model(model: nn.Module, train_loader: DataLoader,
     best_train_loss = float('inf')
     t_accuracy_vals = []
     v_accuracy_vals = []
+    train_loss_vals = []
+    val_loss_vals = []
     for epoch in range(epochs):
         # Training phase
         model.train()
@@ -73,7 +75,7 @@ def train_model(model: nn.Module, train_loader: DataLoader,
             train_loss += loss.item()
             total += labels.size(0) * labels.size(1)  # account for all horizons
             correct += (predictions == labels).sum().item()
-
+        train_loss_vals.append(train_loss/ len(train_loader))
         # Validation phase
         model.eval()
         val_loss = 0
@@ -92,7 +94,7 @@ def train_model(model: nn.Module, train_loader: DataLoader,
                 val_loss += loss.item()
                 val_total += labels.size(0) * labels.size(1)
                 val_correct += (predictions == labels).sum().item()
-
+        val_loss_vals.append(val_loss / len(val_loader))
         # Print metrics
         logger.info(f'Epoch {epoch + 1}')
         logger.info(f'Train Loss: {train_loss / len(train_loader):.4f}')
@@ -113,7 +115,7 @@ def train_model(model: nn.Module, train_loader: DataLoader,
         #     logger.info("Early stopping triggered")
         #     break
 
-    return best_model, best_performer, t_accuracy_vals, v_accuracy_vals
+    return best_model, best_performer, t_accuracy_vals, v_accuracy_vals, train_loss_vals, val_loss_vals
 
 
 def plot_accuracies(tav, vav):
