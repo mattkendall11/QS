@@ -100,6 +100,7 @@ for horizon in range(5):
     axes[horizon].set_title(f'Horizon {horizons[horizon]}')
 
 plt.tight_layout()
+plt.savefig('cm.svg')
 plt.show()
 
 
@@ -115,5 +116,6 @@ plt.plot(horizons, benchmark, color = 'r')
 plt.plot(horizons, benchmark,'+', color = 'r', label = 'Benchmark')
 plt.legend()
 plt.xlabel('Horizon')
-plt.ylabel('Accuracy (%)')
+plt.ylabel('F1 score')
+plt.savefig('comparison.svg')
 plt.show()
