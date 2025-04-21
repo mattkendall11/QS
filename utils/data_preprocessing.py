@@ -141,3 +141,46 @@ class Big_data(data.Dataset):
         # print("Balancing", occs, "=>", perc)
         # print()
 
+class cryptoDataset(data.Dataset):
+    def __init__(
+        self,
+        csv_file,
+        horizon=5,
+        observation_length=10,
+        normalization="zscore",
+        label_column="label_5",
+    ):
+        self.data = np.genfromtxt(csv_file, delimiter=",", skip_header=1)
+
+        # First 40 columns are LOB features
+        self.features = self.data[:, :40]
+
+        # Select the appropriate label
+        if label_column == "label_5":
+            self.labels = self.data[:, -3] - 1  # adjust for 0-indexing if necessary
+        elif label_column == "label_10":
+            self.labels = self.data[:, -1] - 1
+        else:
+            raise ValueError("Unsupported label column")
+
+        # Normalize features
+        if normalization == "zscore":
+            self.features = (self.features - np.mean(self.features, axis=0)) / (np.std(self.features, axis=0) + 1e-8)
+        elif normalization == "minmax":
+            self.features = (self.features - np.min(self.features, axis=0)) / (
+                np.max(self.features, axis=0) - np.min(self.features, axis=0) + 1e-8
+            )
+
+        self.features = torch.tensor(self.features, dtype=torch.float32)
+        self.labels = torch.tensor(self.labels, dtype=torch.long)
+
+        self.observation_length = observation_length
+
+    def __len__(self):
+        return self.features.shape[0] - self.observation_length
+
+    def __getitem__(self, idx):
+        X = self.features[idx : idx + self.observation_length]
+        y = self.labels[idx + self.observation_length - 1]
+        return X, y
+
